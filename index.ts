@@ -1,9 +1,16 @@
-const express = require("express");
-const webpush = require("web-push");
-const cors = require("cors");
-const app = express();
+import express, {Express, Request, Response} from "express";
+import webpush from "web-push";
+import dotenv from 'dotenv';
+import cors from "cors";
+import { PushSubscriptionProps } from "./NotificationsTypes";
 
-const data = [];
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT;
+const bd_url = process.env.URL_DATABASE;
+
+const data : PushSubscriptionProps[] = [];
 
 const corsOptions = {
   origin: "*",
@@ -14,10 +21,10 @@ const corsOptions = {
 // Middleware pour parser le corps de la requête en JSON
 app.use(express.json());
 app.use(cors(corsOptions));
-const port = 8000;
 
 // VAPID keys should be generated only once.
 const vapidKeys = webpush.generateVAPIDKeys();
+
 
 webpush.setGCMAPIKey("<Your GCM API Key Here>");
 webpush.setVapidDetails(
@@ -26,8 +33,9 @@ webpush.setVapidDetails(
   vapidKeys.privateKey
 );
 
+
 // This is the same output of calling JSON.stringify on a PushSubscription
-const pushSubscription = {
+const pushSubscription : PushSubscriptionProps = {
   endpoint: ".....",
   keys: {
     auth: ".....",
@@ -37,15 +45,15 @@ const pushSubscription = {
 
 // webpush.sendNotification(pushSubscription, 'Your Push Payload Text');
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
+app.get("/", (req: Request, res: Response) => {
+  res.send("Welcome Push Notifications Test....");
 });
 
-app.get("/notifications-key", (req, res) => {
+app.get("/notifications-key", (req: Request, res: Response) => {
   res.send(vapidKeys.publicKey);
 });
 
-app.post("/save-subscription", (req, res) => {
+app.post("/save-subscription", (req: Request, res: Response) => {
   console.log(req.body);
   if (pushSubscription.endpoint !== req.body.endpoint) {
     pushSubscription.endpoint = req.body.endpoint;
