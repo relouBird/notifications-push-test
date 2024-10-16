@@ -1,41 +1,43 @@
-import express, {Express, Request, Response} from "express";
+import express, { Express, Request, Response } from "express";
 import webpush from "web-push";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import cors from "cors";
 import { PushSubscriptionProps } from "./NotificationsTypes";
+import {
+    DatabaseSaveSubscriptionInstance,
+  DatabaseTest,
+  SubscriptionTable,
+  syncSubscriptionTable,
+} from "./DatabasesInit";
 
+// configuration de base du serveur
 dotenv.config();
-
 const app = express();
 const port = process.env.PORT;
-const bd_url = process.env.URL_DATABASE;
-
-const data : PushSubscriptionProps[] = [];
-
 const corsOptions = {
   origin: "*",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
   optionsSuccessStatus: 204,
 };
-// Middleware pour parser le corps de la requête en JSON
-app.use(express.json());
+app.use(express.json()); // Middleware pour parser le corps de la requête en JSON
 app.use(cors(corsOptions));
 
-// VAPID keys should be generated only once.
+// configuration du webPush pour la notification
 const vapidKeys = webpush.generateVAPIDKeys();
-
-
 webpush.setGCMAPIKey("<Your GCM API Key Here>");
+// VAPID keys should be generated only once.
 webpush.setVapidDetails(
   "mailto:http://localhost:5173/",
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
 
+DatabaseTest(); // permet de tester la connexion à la base de donnée
+const SubscriptionTableConnection = SubscriptionTable;
+syncSubscriptionTable();
 
-// This is the same output of calling JSON.stringify on a PushSubscription
-const pushSubscription : PushSubscriptionProps = {
+let pushSubscription: PushSubscriptionProps = {    // This is the same output of calling JSON.stringify on a PushSubscription
   endpoint: ".....",
   keys: {
     auth: ".....",
@@ -53,12 +55,10 @@ app.get("/notifications-key", (req: Request, res: Response) => {
   res.send(vapidKeys.publicKey);
 });
 
-app.post("/save-subscription", (req: Request, res: Response) => {
+app.post("/save-subscription", async (req: Request, res: Response) => {
   console.log(req.body);
   if (pushSubscription.endpoint !== req.body.endpoint) {
-    pushSubscription.endpoint = req.body.endpoint;
-    pushSubscription.keys.auth = req.body.keys.auth;
-    pushSubscription.keys.p256dh = req.body.keys.p256dh;
+    pushSubscription = await DatabaseSaveSubscriptionInstance(req.body as PushSubscriptionProps,pushSubscription)
   }
   res.send({ resolvetext: "ok I have save subscription" });
 });
