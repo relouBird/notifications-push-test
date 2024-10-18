@@ -4,7 +4,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { PushSubscriptionProps } from "./NotificationsTypes";
 import {
-    DatabaseSaveSubscriptionInstance,
+  DatabaseGetSubcription,
+  DatabaseSaveSubscriptionInstance,
   DatabaseTest,
   SubscriptionTable,
   syncSubscriptionTable,
@@ -25,10 +26,10 @@ app.use(cors(corsOptions));
 
 // configuration du webPush pour la notification
 const vapidKeys = webpush.generateVAPIDKeys();
-webpush.setGCMAPIKey("<Your GCM API Key Here>");
+// webpush.setGCMAPIKey("<Your GCM API Key Here>");
 // VAPID keys should be generated only once.
 webpush.setVapidDetails(
-  "mailto:http://localhost:5173/",
+  "mailto:ulrichkwamou@gmail.com",
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
@@ -37,7 +38,8 @@ DatabaseTest(); // permet de tester la connexion à la base de donnée
 const SubscriptionTableConnection = SubscriptionTable;
 syncSubscriptionTable();
 
-let pushSubscription: PushSubscriptionProps = {    // This is the same output of calling JSON.stringify on a PushSubscription
+let pushSubscription: PushSubscriptionProps = {
+  // This is the same output of calling JSON.stringify on a PushSubscription
   endpoint: ".....",
   keys: {
     auth: ".....",
@@ -58,9 +60,28 @@ app.get("/notifications-key", (req: Request, res: Response) => {
 app.post("/save-subscription", async (req: Request, res: Response) => {
   console.log(req.body);
   if (pushSubscription.endpoint !== req.body.endpoint) {
-    pushSubscription = await DatabaseSaveSubscriptionInstance(req.body as PushSubscriptionProps,pushSubscription)
+    pushSubscription = await DatabaseSaveSubscriptionInstance(
+      req.body as PushSubscriptionProps,
+      pushSubscription
+    );
   }
   res.send({ resolvetext: "ok I have save subscription" });
+});
+
+app.get("/send-notification", async (req: Request, res: Response) => {
+  const payload = JSON.stringify({
+    title: "Hello",
+    body: "Hello World :)",
+  });
+  const allNotificationsPush = await DatabaseGetSubcription();
+  for (const notif of allNotificationsPush) {
+    try {
+      await webpush.sendNotification(notif, payload);
+    } catch (err) {
+      console.error(`Error sending notification to ${notif.endpoint}:`, err);
+    }
+  }
+  res.send({ resolvetext: "ok I have send notification" });
 });
 
 app.listen(port, () => {

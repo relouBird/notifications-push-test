@@ -13,20 +13,30 @@
 
 <script>
     let val = {
-        relou : "fou"
+        relou: "fou"
     }
     document.getElementById("hello").addEventListener("click", (event) => {
         event.preventDefault();
         console.log("fou")
-        fetch("http://localhost:8000/save-subscription", {
-            method: "POST",
+        // fetch("http://localhost:8000/save-subscription", {
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //     },
+        //     body : JSON.stringify(val)
+        // }).then((r)=>{
+        //     return r.json()
+        // }).then((r)=>{
+        //     console.log(r.resolvetext)
+        // })
+        fetch("http://localhost:8000/send-notification", {
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
-            },
-            body : JSON.stringify(val)
-        }).then((r)=>{
+            }
+        }).then((r) => {
             return r.json()
-        }).then((r)=>{
+        }).then((r) => {
             console.log(r.resolvetext)
         })
     })

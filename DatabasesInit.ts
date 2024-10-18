@@ -93,3 +93,20 @@ export async function DatabaseSaveSubscriptionInstance(
     
     return pushSubscription;
 }
+
+export async function DatabaseGetSubcription (){
+    const tabSubscription : PushSubscriptionProps[] = []
+    const allSub = SubscriptionTable.findAll();
+    (await allSub).every((sub) => {
+      if(sub){
+        tabSubscription.push({
+            endpoint : sub.getDataValue("endpoint"),
+            keys :{
+                auth : sub.getDataValue("authKey"),
+                p256dh : sub.getDataValue("p256dhKey")
+            }
+        })
+      }
+    });
+    return [...tabSubscription]
+}
